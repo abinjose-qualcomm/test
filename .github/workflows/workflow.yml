@@ -52,7 +52,7 @@ jobs:
         shell: bash
         run: |
           xargs -I {} bash -c '
-            resp=$(curl -s -H "Authorization: Bearer '"$GH_TOKEN"'" https://api.github.com/repos/qualcomm-linux/kernel-topics/pulls/{})
+            resp=$(curl -s -H "Authorization: Bearer '"$GH_TOKEN"'" https://api.github.com/repos/abinjose-qualcomm/test/pulls/{})
             echo $resp
             echo {}, $(echo $resp | jq .merged_at)
             if echo "$resp" | jq -e ".merged_at != null" > /dev/null; then 
