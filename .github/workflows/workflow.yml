@@ -6,10 +6,10 @@ on:
       base_branch:
         description: Base branch
         required: true
-        default: qcom-next-staging
+        default: video 
       pr_number:
         description: PR number
-        required: false
+        required: true
 
 jobs:
   depends-on-workflow:
@@ -54,6 +54,7 @@ jobs:
         shell: bash
         run: |
           xargs -I {} bash -c '
+            echo $GH_TOKEN | wc -c 
             resp=$(curl -s -H "Authorization: Bearer '"$GH_TOKEN"'" https://api.github.com/repos/qualcomm-linux/kernel-topics/pulls/{})
             if echo "$resp" | jq -e ".merged_at != null" > /dev/null; then 
               base_ref=$(echo "$resp" | jq -r .base.ref)
