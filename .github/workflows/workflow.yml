@@ -1,0 +1,60 @@
+name: Sync workspace
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_branch:
+        description: Base branch
+        required: true
+        default: qcom-next-staging
+      pr_number:
+        description: PR number
+        required: false
+
+jobs:
+  depends-on-workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repositories
+        if: inputs.base_branch != 'qcom-next-staging'
+        shell: bash
+        run: |
+          git clone https://github.com/abinjose-qualcomm/test.git kernel
+
+      - name: Fetch PR
+        if: inputs.base_branch != 'qcom-next-staging'
+        shell: bash
+        run: |
+          cd kernel
+          git fetch https://github.com/abinjose-qualcomm/test.git pull/${{inputs.pr_number}}/head:pr-${{inputs.pr_number}}
+
+      - name: Retrieve Dependent PRs
+        if: inputs.base_branch != 'qcom-next-staging'
+        shell: bash
+        run: |
+          git log -n 1 --format=%b FETCH_HEAD | \
+          grep '^Depends-on: ' | \
+          cut -d ':' -f2 | \
+          tr ',' '\n' | \
+          sed 's/^ *//' | \
+          grep -E "^#[0-9]+$" | \
+          sed 's/#//' | \
+          sort --numeric-sort | \
+          uniq > ../pr-deps
+          cd ..
+          cat pr-deps
+
+      - name: Validate Dependent PRs
+        if: inputs.base_branch != 'qcom-next-staging'
+        env: 
+          GH_TOKEN: ${{ secrets.APP_TOKEN }}
+        shell: bash
+        run: |
+          xargs -I {} bash -c '
+            resp=$(curl -s -H "Authorization: Bearer '"$GH_TOKEN"'" https://api.github.com/repos/qualcomm-linux/kernel-topics/pulls/{})
+            if echo "$resp" | jq -e ".merged_at != null" > /dev/null; then 
+              base_ref=$(echo "$resp" | jq -r .base.ref)
+              echo "{},$base_ref"
+            fi 
+          ' < pr-deps > topic-branches
+          cat topic-banches
