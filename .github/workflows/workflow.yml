@@ -53,9 +53,10 @@ jobs:
         run: |
           xargs -I {} bash -c '
             resp=$(curl -s -H "Authorization: Bearer '"$GH_TOKEN"'" https://api.github.com/repos/qualcomm-linux/kernel-topics/pulls/{})
+            echo {}
+            echo $resp | jq .merged_at
             if echo "$resp" | jq -e ".merged_at != null" > /dev/null; then 
               base_ref=$(echo "$resp" | jq -r .base.ref)
               echo "{},$base_ref"
             fi 
-          ' < pr-deps > topic-branches
-          cat topic-branches
+          ' < pr-deps 
